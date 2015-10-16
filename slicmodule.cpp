@@ -26,7 +26,7 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
   printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \n",dimX,dimY);
   #endif
 
-  double ***list2; // 3dims double array
+  double ***inputVolume; // 3dims double array
   int * dimensions;
 
   //Create C arrays from numpy objects:
@@ -34,7 +34,7 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
   PyArray_Descr *descr;
   descr = PyArray_DescrFromType(typenum);
   npy_intp dims[3];
-  if (PyArray_AsCArray(&list2_obj, (void ***)&list2, dims, 3, descr) < 0 ){ //|| PyArray_AsCArray(&list3_obj, (void ***)&list3, dims, 3, descr) < 0) {
+  if (PyArray_AsCArray(&list2_obj, (void ***)&inputVolume, dims, 3, descr) < 0 ){ //|| PyArray_AsCArray(&list3_obj, (void ***)&list3, dims, 3, descr) < 0) {
     PyErr_SetString(PyExc_TypeError, "[slicmodule.cpp] Error converting to c array");
     return NULL; 
   }
@@ -53,7 +53,7 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
   for(int i=0;i<dimY;i++)
     for(int j=0;j<dimX;j++)
     {
-      ubuff[idx] = list2[i][j][0]; 
+      ubuff[idx] = inputVolume[i][j][0]; 
       idx++;
     }
 
