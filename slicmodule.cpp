@@ -9,7 +9,7 @@
 #include "LKM.h"
 #include "utils.h"
 
-// #define DEBUG
+#define DEBUG
 
 using namespace vigra;
 
