@@ -14,6 +14,7 @@ slic_NumpyArgs(PyObject *self, PyObject *args)
   int dimY;
   if (!PyArg_ParseTuple(args, "OOii", &list2_obj, &list3_obj, &dimX, &dimY)) // Getting arrays in PyObjects
     return NULL;
+     
 
 
   printf("Arrays dimensions : x: %d, y: %d \n",dimX,dimY);
