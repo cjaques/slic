@@ -19,14 +19,16 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
   PyObject *list3_obj;
   int dimX;
   int dimY;
-  if (!PyArg_ParseTuple(args, "Oii", &list2_obj, &dimX, &dimY)) // Getting arrays in PyObjects
+  int STEP;
+  float M;
+  if (!PyArg_ParseTuple(args, "Oiiif", &list2_obj, &dimX, &dimY,&STEP,&M)) // Getting arrays in PyObjects
     return NULL;
 
   #ifdef DEBUG
-  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \n",dimX,dimY);
+  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \nSuperpixel parameters : STEP: %d, M: %d",dimX,dimY,STEP,M);
   #endif
 
-  double ***list2; // 3dims double array
+  double ***inputVolume; // 3dims double array
   int * dimensions;
 
   //Create C arrays from numpy objects:
@@ -34,13 +36,11 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
   PyArray_Descr *descr;
   descr = PyArray_DescrFromType(typenum);
   npy_intp dims[3];
-  if (PyArray_AsCArray(&list2_obj, (void ***)&list2, dims, 3, descr) < 0 ){ //|| PyArray_AsCArray(&list3_obj, (void ***)&list3, dims, 3, descr) < 0) {
+  if (PyArray_AsCArray(&list2_obj, (void ***)&inputVolume, dims, 3, descr) < 0 ){ //|| PyArray_AsCArray(&list3_obj, (void ***)&list3, dims, 3, descr) < 0) {
     PyErr_SetString(PyExc_TypeError, "[slicmodule.cpp] Error converting to c array");
     return NULL; 
   }
 
-  int STEP = 28;
-  float M = 10.0;
   int numlabels = 100;
   // TODO CHris - how to avoid this? Creation of unnecessary new array
   int imgLength = dimX*dimY;
@@ -53,7 +53,7 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
   for(int i=0;i<dimY;i++)
     for(int j=0;j<dimX;j++)
     {
-      ubuff[idx] = list2[i][j][0]; 
+      ubuff[idx] = inputVolume[i][j][0]; 
       idx++;
     }
 
