@@ -9,7 +9,7 @@
 #include "LKM.h"
 #include "utils.h"
 
-#define DEBUG
+// #define DEBUG
 
 using namespace vigra;
 
@@ -19,11 +19,13 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
   PyObject *list3_obj;
   int dimX;
   int dimY;
-  if (!PyArg_ParseTuple(args, "Oii", &list2_obj, &dimX, &dimY)) // Getting arrays in PyObjects
+  int STEP;
+  float M;
+  if (!PyArg_ParseTuple(args, "Oiiif", &list2_obj, &dimX, &dimY,&STEP,&M)) // Getting arrays in PyObjects
     return NULL;
 
   #ifdef DEBUG
-  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \n",dimX,dimY);
+  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \nSuperpixel parameters : STEP: %d, M: %d",dimX,dimY,STEP,M);
   #endif
 
   double ***inputVolume; // 3dims double array
@@ -39,8 +41,6 @@ static PyObject * slic_NumpyArgs(PyObject *self, PyObject *args)
     return NULL; 
   }
 
-  int STEP = 28;
-  float M = 10.0;
   int numlabels = 100;
   // TODO CHris - how to avoid this? Creation of unnecessary new array
   int imgLength = dimX*dimY;
