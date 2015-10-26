@@ -70,7 +70,7 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
   // cv::imwrite("/Users/Chris/Code/Images/deeeeAfterContours.jpg",im2);
   printf("[slicmodule.cpp] Generating superpixels. STEP=%d, M=%f\n", STEP, M);
   #endif
-  
+
   // Pass data from input to ubuff
   int idx =0;
   for(int i=0;i<dimY;i++)
@@ -81,6 +81,7 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
         idx ++;
       }
   }
+  
   lkm.DoSuperpixelSegmentation(ubuff, dimX, dimY, labels, numlabels, STEP, M);
 
   UINT color = 0xff0000; //0xff0000 draws red contours
