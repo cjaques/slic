@@ -140,11 +140,47 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
   return (PyObject*)returnval;
 }
 
+static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
+{
+  PyObject *inputArray;
+
+  int dimX;
+  int dimY;
+  int STEP;
+  float M;
+  int MAX_NUM_ITERATIONS;
+  if (!PyArg_ParseTuple(args, "O", &inputArray)) // Getting arrays in PyObjects
+    return NULL;
+
+  #ifdef DEBUG
+  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \nSupervoxel parameters : STEP: %d, M: %f\n",dimX,dimY,STEP,M);
+  #endif
+
+  double ****inputVolume; // 4 dimensionnal double array
+  int * dimensions;
+
+  //Create C arrays from numpy objects:
+  int typenum = NPY_DOUBLE;
+  PyArray_Descr *descr;
+  descr = PyArray_DescrFromType(typenum);
+  npy_intp dims[4];
+  if (PyArray_AsCArray(&inputArray, (void ****)&inputVolume, dims, 4, descr) < 0 ){ 
+    PyErr_SetString(PyExc_TypeError, "[slicmodule.cpp] Error converting to c array");
+    return NULL; 
+  }
+
+
+  printf("In compute3D slic...\n");
+  return inputArray;
+}
+
 // Defining module methods
 static PyMethodDef SlicMethods[] = {
      // ...
      {"Compute2DSlic",  slic_Compute2DSlic, METH_VARARGS,
      "Computes 2D slic on the input image."},
+     {"Compute3DSlic",  slic_Compute3DSlic, METH_VARARGS,
+     "Computes 3D slic on the input volume."},
     // ...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
