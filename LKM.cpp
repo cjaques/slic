@@ -468,7 +468,7 @@ void LKM::PerformLKMClustering(
 {
 	int sz = m_width*m_height;
 	const int numk = kseedsl.size();
-	int numitr(0);
+	// int numitr(0);
 
 	//----------------
 	int offset = STEP;
@@ -612,7 +612,7 @@ void LKM::PerformLKMVoxelClustering(
 {
 	unsigned long sz = m_width*m_height;
 	const unsigned int numk = kseedsl.size();
-	int numitr(0);
+	// int numitr(0);
 
         if(numk >= MAX_SID)
           {
@@ -776,7 +776,7 @@ void LKM::PerformLKMVoxelClustering(
 {
 	int sz = m_width*m_height;
 	const int numk = kseedsl.size();
-	int numitr(0);
+	// int numitr(0);
 
         if(numk >= MAX_SID)
           {
@@ -928,7 +928,7 @@ void LKM::EnforceConnectivityForLargeImages(
 		for( int k = 1; k < width-1; k++ )
 		{
 			int oi = j*width+k;
-			int np(0);
+			// int np(0);
 			int count(0);
 			for( int i = 0; i < 8; i++ )
 			{
@@ -990,7 +990,7 @@ void LKM::EnforceConnectivityForLargeImages(
 			for( int k = 1; k < width-1; k++ )
 			{
 				int oi = j*width+k;
-				int np(0);
+				// int np(0);
 				int count(0);
 				for( int nd = d-1; nd <= d+1; nd++ )
 				{
@@ -1088,7 +1088,7 @@ void LKM::SaveLabels_Text(
                           string				filename,
                           string				path) 
 {
-	int sz = width*height;
+	// int sz = width*height;
 
         /*
 	char* fname = new char[_MAX_FNAME];

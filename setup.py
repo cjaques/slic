@@ -5,9 +5,10 @@ module1 = Extension('slic',
                                      ('MINOR_VERSION', '0')],
                      include_dirs = ['/Users/Chris/miniconda/envs/ilastik-devel/include/',
                                       '/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include/',
-                                      '/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include/numpy'],
-                    # libraries = ['tcl83'],
-                    # library_dirs = ['/usr/local/lib'],
+                                      '/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include/numpy',
+                                      '/usr/local/include/'],
+                    libraries = ['opencv_core','opencv_highgui'],
+                    library_dirs = ['/usr/local/lib/'],
                     sources = ['slicmodule.cpp', 'LKM.cpp', 'utils.cpp']) #, language='c++')
 
 setup (name = 'slic',
