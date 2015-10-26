@@ -80,7 +80,6 @@ void DrawContoursAroundSegments(
           mainindex++;
         }
     }
-    printf("[utils.cpp] -  width = %d height = %d \n",width, height);
 }
 
 

@@ -56,12 +56,13 @@ public:
 
 	void DoSuperpixelSegmentation(
 		UINT*&				ubuff,
-		const int					width,
-		const int					height,
-		sidType*&	       				klabels,
-		int&						numlabels,
-		const int&					STEP,
-                const float M = 10.0f);
+		const int			width,
+		const int			height,
+		sidType*&	       	klabels,
+		int&				numlabels,
+		const int&			STEP,
+        const float 		M = 10.0f,
+        const int 			NUM_ITERATION=10);
 
 	void DoSupervoxelSegmentation(
 		UINT**&				ubuffvec,
@@ -114,9 +115,10 @@ private:
 		vector<double>&				kseedsb,
 		vector<double>&				kseedsx,
 		vector<double>&				kseedsy,
-		sidType*&						klabels,
+		sidType*&					klabels,
 		const int&					STEP,
-                const float M);
+        const float 				M,
+        const int					NUM_ITERATION=10);
 
 	void PerformLKMVoxelClustering(
 		vector<double>&				kseedsl,

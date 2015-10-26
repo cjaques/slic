@@ -462,9 +462,10 @@ void LKM::PerformLKMClustering(
 	vector<double>&		kseedsb,
 	vector<double>&		kseedsx,
 	vector<double>&		kseedsy,
-	sidType*&	   	klabels,
+	sidType*&		   	klabels,
 	const int&	       	STEP,
-        const float M)
+    const float 		M,
+    const int 				NUM_ITERATION )
 {
 	int sz = m_width*m_height;
 	const int numk = kseedsl.size();
@@ -473,7 +474,6 @@ void LKM::PerformLKMClustering(
 	//----------------
 	int offset = STEP;
 	//----------------
-
 	
 	vector<double> clustersize(numk, 0);
 	vector<double> inv(numk, 0);//to store 1/clustersize[k] values
@@ -485,14 +485,13 @@ void LKM::PerformLKMClustering(
 	vector<double> sigmay(numk, 0);
 	vector<double> distvec(sz, DBL_MAX);
 
-	//double invwt = 1.0/((STEP/10.0)*(STEP/10.0));
-        double invwt = 1.0/((STEP/M)*(STEP/M));
+    double invwt = 1.0/((STEP/M)*(STEP/M));
 
 	int x1, y1, x2, y2;
 	double l, a, b;
 	double dist;
 	double distxy;
-	for( int itr = 0; itr < 10; itr++ )
+	for( int itr = 0; itr < NUM_ITERATION; itr++ )
 	{
 		distvec.assign(sz, DBL_MAX);
 		for( int n = 0; n < numk; n++ )
@@ -1177,7 +1176,8 @@ void LKM::DoSuperpixelSegmentation(
 	sidType*&	       				klabels,
 	int&						numlabels,
 	const int&					STEP,
-        const float M)
+        const float M,
+        const int NUM_ITERATION)
 {
 	vector<double> kseedsl(0);
 	vector<double> kseedsa(0);
@@ -1200,7 +1200,7 @@ void LKM::DoSuperpixelSegmentation(
 	bool perturbseeds(true);
 	GetKValues_LABXY(kseedsl, kseedsa, kseedsb, kseedsx, kseedsy, STEP, perturbseeds);
 
-	PerformLKMClustering(kseedsl, kseedsa, kseedsb, kseedsx, kseedsy, klabels, STEP, M);
+	PerformLKMClustering(kseedsl, kseedsa, kseedsb, kseedsx, kseedsy, klabels, STEP, M,NUM_ITERATION);
 	numlabels = kseedsl.size();
 	//-------------------------------------------------------------------------
 	// Save the labels if needed. Provide image name and the folder to save in.

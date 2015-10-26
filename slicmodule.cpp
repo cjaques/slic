@@ -24,7 +24,8 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
   int dimY;
   int STEP;
   float M;
-  if (!PyArg_ParseTuple(args, "Oif", &inputArray,&STEP,&M)) // Getting arrays in PyObjects
+  int MAX_NUM_ITERATIONS;
+  if (!PyArg_ParseTuple(args, "Oifi", &inputArray,&STEP,&M,&MAX_NUM_ITERATIONS)) // Getting arrays in PyObjects
     return NULL;
 
   #ifdef DEBUG
@@ -82,7 +83,7 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
       }
   }
   
-  lkm.DoSuperpixelSegmentation(ubuff, dimX, dimY, labels, numlabels, STEP, M);
+  lkm.DoSuperpixelSegmentation(ubuff, dimX, dimY, labels, numlabels, STEP, M,MAX_NUM_ITERATIONS);
 
   UINT color = 0xff0000; //0xff0000 draws red contours
   
