@@ -605,9 +605,9 @@ void LKM::PerformLKMVoxelClustering(
 	vector<double>&				kseedsx,
 	vector<double>&				kseedsy,
 	vector<double>&				kseedsz,
-	sidType**&    	       			klabels,
+	sidType**&    	       		klabels,
 	const int&	       			STEP,
-        const double cubeness)
+    const double 				cubeness)
 {
 	unsigned long sz = m_width*m_height;
 	const unsigned int numk = kseedsl.size();
@@ -769,9 +769,9 @@ void LKM::PerformLKMVoxelClustering(
 	vector<double>&				kseedsx,
 	vector<double>&				kseedsy,
 	vector<double>&				kseedsz,
-	sidType**&				klabels,
+	sidType**&					klabels,
 	const int&			      	STEP,
-        const double cubeness)
+    const double 				cubeness)
 {
 	int sz = m_width*m_height;
 	const int numk = kseedsl.size();
@@ -1229,10 +1229,10 @@ void LKM::DoSupervoxelSegmentation(
 	const int&					width,
 	const int&					height,
 	const int&					depth,
-	sidType**&	       				klabels,
+	sidType**&	       			klabels,
 	int&						numlabels,
 	const int&					STEP,
-        const double cubeness)
+    const double 				cubeness)
 {
 	vector<double> kseedsl(0);
 	vector<double> kseedsa(0);
@@ -1282,7 +1282,7 @@ void LKM::DoSupervoxelSegmentation(
 
         //RelabelSupervoxels(width, height, depth, klabels, numlabels);
 
-        RelabelStraySupervoxels(width, height, depth, klabels, numlabels, STEP);
+    RelabelStraySupervoxels(width, height, depth, klabels, numlabels, STEP);
 
 	//-------------------------------------------------------------------------
 	// Save the labels if needed. Provide image name and the folder to save in.
@@ -1299,7 +1299,7 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
                                                 sidType**&					klabels,
                                                 int&						numlabels,
                                                 const int					STEP,
-                                                const double cubeness)
+                                                const double 				cubeness)
 {
 	vector<double> kseedsl(0);
 	vector<double> kseedsx(0);
@@ -1313,10 +1313,12 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
 	unsigned long sz = m_width*m_height;
 	
 	//--------------------------------------------------
-        unsigned long memSize = sizeof(int)*depth + depth*sz*sizeof(sidType);
-        printf("[LKM] memory required to run supervoxel algorithm = %ldMb\n", memSize/(1024*1024));
+    unsigned long memSize = sizeof(int)*depth + depth*sz*sizeof(sidType);
+    printf("[LKM] memory required to run supervoxel algorithm = %ldMb\n", memSize/(1024*1024));
+
 	klabels = new sidType*[depth];
-        m_lvecvec = ubuffvec;
+    m_lvecvec = ubuffvec;
+
 	for( int d = 0; d < depth; d++ )
 	{
 		klabels[d] = new sidType[sz];
@@ -1344,7 +1346,7 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
 
         //RelabelSupervoxels(width, height, depth, klabels, numlabels);
 
-        RelabelStraySupervoxels(width, height, depth, klabels, numlabels, STEP);
+	RelabelStraySupervoxels(width, height, depth, klabels, numlabels, STEP);
 
 	//-------------------------------------------------------------------------
 	// Save the labels if needed. Provide image name and the folder to save in.
