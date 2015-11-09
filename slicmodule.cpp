@@ -168,12 +168,12 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d z: %d\nSupervoxel parameters : STEP: %d, M: %.1f\n",dims[0],dims[1],dims[2],STEP,M);
   #endif
 
-  int dimX = dims[0];
+  int dimZ = dims[0];
   int dimY = dims[1];
-  int dimZ = dims[2];
+  int dimX = dims[2];
   int imgLength = dimX*dimY;
   int imgDepth = dimZ;
-  UINT** ubuff = new UINT*[imgDepth]; // double
+  double** ubuff = new double*[imgDepth]; // double
   sidType** labels = new sidType*[imgDepth];
   LKM lkm;
 
@@ -186,24 +186,24 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   double val;
   int SIZE = imgLength*imgDepth;
 
-  // Pass data from input to ubuff
+  // Copy data from input to ubuff --> avoid this?
   int idx =0;
   for(int k=0;k<dimZ;k++)
   {
-    ubuff[k] = new UINT[imgLength];
+    ubuff[k] = new double[imgLength];
     labels[k] = new sidType[imgLength];
     idx = 0;
     for(int j=0;j<dimY;j++)
     {
       for(int i=0;i<dimX;i++) 
         {
-          ubuff[k][idx] = (UINT)inputVolume[i][j][k];
+          ubuff[k][idx] = (double)inputVolume[k][j][i];
           idx ++;
         }
     }
   }
-  
-  lkm.DoSupervoxelSegmentation(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M); // DoSupervoxelSegmentationForGrayVolume
+  printf("Passed data, computing voxels\n");
+  lkm.DoSupervoxelSegmentationForGrayVolume(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M); // DoSupervoxelSegmentationForGrayVolume
 
   #ifdef DEBUG
   printf("[slicmodule.cpp] Output array ready, casting PyArray to PyObject\n");
@@ -231,6 +231,7 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   sidType* labelsMM = new sidType[dimx*dimy];
   UINT* ubb = new UINT[dimx*dimy];
   
+  printf("About to process volume slice by slice\n");
   
   for(int k=0;k<dimz;k++)
    {
@@ -242,7 +243,7 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
     {
       for(int j=0;j<dimx;j++) 
         {
-          ubb[idx2] = inputVolume[k][i][j];
+          ubb[idx2] = (UINT)inputVolume[k][i][j];
           idx2 ++;
         }
     }
@@ -283,6 +284,22 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   printf("[slicmodule.cpp] Returning outputs\n");
   #endif 
   
+  /* -------------------------
+       CLEAN UP 
+  ---------------------------*/
+  // for(int k=0;k<dimZ;k++)
+  // {
+  //   delete ubuff[k] ;
+  //   delete labels[k] ;
+  // }
+  // delete ubuff;  
+  // delete labels; 
+  // delete labelsMM;
+  // delete ubb;
+
+  /* -------------------------
+       RETURN VAL
+  ---------------------------*/
   Py_INCREF(returnval);
   return (PyObject*)returnval;
 }
@@ -302,7 +319,7 @@ void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,int **labels)
   printf("[slicmodule.cpp] Extract3Darray - Dims : %d - %d - %d \n",dims[0],dims[1],dims[2]);
   #endif 
 
-  for(int i =0;i<dims[2];i++)
+  for(int i =0;i<dims[0];i++)
   {
     
     
@@ -310,11 +327,11 @@ void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,int **labels)
 
     for(int j=0;j<dims[1];j++)
     {
-      for(int k=0;k<dims[0];k++) 
+      for(int k=0;k<dims[2];k++) 
       {
-        index[2] = i;
+        index[2] = k;
         index[1] = j;
-        index[0] = k; 
+        index[0] = i; 
         
         labelValue = (PyObject*)Py_BuildValue("i",(labels[i][idx]));
         idx++;
