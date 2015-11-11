@@ -1365,7 +1365,7 @@ void LKM::RelabelSupervoxels(
 	const int&					width,
 	const int&					height,
 	const int&					depth,
-	sidType**&		       			labels,
+	sidType**&		       		labels,
 	int&						numlabels)
 {
 	int sz = width*height;

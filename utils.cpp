@@ -82,6 +82,70 @@ void DrawContoursAroundSegments(
     }
 }
 
+//=================================================================================
+/// DrawContoursAroundSegments
+///
+/// Internal contour drawing option exists. One only needs to comment the 'if'
+/// statement inside the loop that looks at neighbourhood.
+//=================================================================================
+void DrawContoursAroundVoxels(
+                                double**      img,    //contours will be drawn on this image
+                                sidType**     labels,
+                                const int&    width,
+                                const int&    height,
+                                const int&    depth,
+                                const UINT&   color )
+{
+  const int dx10[10] = {-1,  0,  1,  0, -1,  1,  1, -1,  0, 0};
+  const int dy10[10] = { 0, -1,  0,  1, -1, -1,  1,  1,  0, 0};
+  const int dz10[10] = { 0,  0,  0,  0,  0,  0,  0,  0, -1, 1};
+
+  int sz = width*height;
+  vector< vector<bool> > istaken(depth, vector<bool>(sz,false));
+
+  int mainindex(0);
+  int cind(0);
+  for(int i =0; i<depth;i++)
+  {
+    mainindex = 0;
+    for( int j = 0; j < height; j++ )
+      {
+        for( int k = 0; k < width; k++ )
+          {
+            int np(0);
+
+            for( int ix = 0; ix < 10; ix++ )
+              {
+                int x = k + dx10[ix];
+                int y = j + dy10[ix];
+                int z = i + dz10[ix];
+
+                if( (x >= 0 && x < width) && (y >= 0 && y < height) && (z >= 0 && z < depth))
+                  {
+                    int index = y*width + x;
+
+                    if( false == istaken[z][index] )//comment this to obtain internal contours
+                      {
+                        if( labels[z][mainindex] != labels[z][index] ) np++;
+                      }
+                  }
+              }
+            if( np > 1 )
+              {
+                istaken[i][mainindex] = true;
+                img[i][mainindex] = (double)color;
+                cind++;
+              }
+              else
+              {
+                img[i][mainindex] = 0;
+              }
+            mainindex++;
+          }
+      }
+    }
+}
+
 
 void splitpath(string path, char* fname, char* ext)
 {

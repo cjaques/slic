@@ -20,7 +20,13 @@ using namespace vigra;
         Functions
  ---------------------------------------*/
 void Extract_array2D(PyArrayObject *returnval,npy_intp *dims,UINT *ubuff, UINT color);
-void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,sidType **labels);
+// void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,sidType **labels);
+template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,T **labels);
+
+/* -----------------------------------------
+        Python callbacks
+ ---------------------------------------*/
+static PyObject *my_callback = NULL;
 
 /* -----------------------------------------
         COMPUTE 2D SUPERPIXELS 
@@ -148,6 +154,7 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   int STEP;
   float M;
   int MAX_NUM_ITERATIONS;
+
   if (!PyArg_ParseTuple(args, "Oifi", &inputArray,&STEP, &M,&MAX_NUM_ITERATIONS)) // Getting arrays in PyObjects
     return NULL;
 
@@ -173,18 +180,11 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   int dimX = dims[2];
   int imgLength = dimX*dimY;
   int imgDepth = dimZ;
-  double** ubuff = new double*[imgDepth]; // double
+  double** ubuff = new double*[imgDepth];
   sidType** labels = new sidType*[imgDepth];
   LKM lkm;
 
-  int numlabels = STEP*STEP*STEP;
-
-
-  double mean=0;
-  int max=0;
-  int min=1000000;
-  double val;
-  int SIZE = imgLength*imgDepth;
+  int numlabels = STEP*STEP*STEP*2; 
 
   // Copy data from input to ubuff --> avoid this?
   int idx =0;
@@ -202,84 +202,27 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
         }
     }
   }
-  printf("Passed data, computing voxels\n");
-  lkm.DoSupervoxelSegmentationForGrayVolume(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M); // DoSupervoxelSegmentationForGrayVolume
 
+  lkm.DoSupervoxelSegmentationForGrayVolume(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M); // DoSupervoxelSegmentationForGrayVolume
+  UINT color = 0xff0000;
+  DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
+  
   #ifdef DEBUG
   printf("[slicmodule.cpp] Output array ready, casting PyArray to PyObject\n");
-  #endif 
+  #endif
+
   PyObject* ret = PyArray_SimpleNew(3, dims, NPY_DOUBLE);
+  PyObject* bnd = PyArray_SimpleNew(3, dims, NPY_DOUBLE);
   PyArrayObject * returnval = (PyArrayObject*)PyArray_FROM_OTF(ret,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
-  Extract_array3D(returnval,dims,labels);
-
-  /*
-  ---------------------------- 
-        DEBUG SECTION 
-  ----------------------------
-  ---------------------------*/
-
-  int idx1=0;
-  int dimz = dims[0];
-  int dimy = dims[1];
-  int dimx = dims[2];
-  UINT color = 0xff0000;
-  int numLabelss = STEP*STEP;
-
-  cv::Mat im2 = cv::Mat::zeros(dimy,dimx, CV_8UC1);
-  cv::Mat im3 = cv::Mat::zeros(dimy,dimx, CV_8UC1);
-
-  sidType* labelsMM = new sidType[dimx*dimy];
-  UINT* ubb = new UINT[dimx*dimy];
+  PyArrayObject * boundaries = (PyArrayObject*)PyArray_FROM_OTF(bnd,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
+  Extract_array3D<sidType>(returnval,dims,labels); // Gets labels into returnval
+  Extract_array3D<double>(boundaries,dims,ubuff); // Gets boundaries
   
-  printf("About to process volume slice by slice\n");
-  
-  for(int k=0;k<dimz;k++)
-   {
-    idx1=0;
+  PyObject* result;
 
-    // Pass data from input to ubuff
-    int idx2 =0;
-    for(int i=0;i<dimy;i++)
-    {
-      for(int j=0;j<dimx;j++) 
-        {
-          ubb[idx2] = (UINT)inputVolume[k][i][j];
-          idx2 ++;
-        }
-    }
-    
-    // ubb = ubuff[k];
-    // printf("Avant superpixels...k:%d\n",k);
-    lkm.DoSuperpixelSegmentation(ubb,dimx,dimy,labelsMM,numLabelss, 5, 2.0, 6);
-    // printf("Avant DrawContoursAroundSegments...k:%d\n",k);
-    DrawContoursAroundSegments(ubb, labelsMM, dimx,dimy, color);
+  if(my_callback!=NULL)
+     result = PyObject_CallObject(my_callback, (PyObject*)Py_BuildValue("(O)", boundaries ));
 
-    for(int i=0;i<dimy;i++)
-    {
-      uchar* rowi = im2.ptr(i);
-      uchar* rowM = im3.ptr(i);
-      for(int j=0;j<dimx;j++) 
-        {
-          rowi[j] = labels[k][idx1];
-          
-          if(ubb[idx1] == color)
-            rowM[j] = 255;
-          else
-            rowM[j] = 0;
-          idx1++;
-        }
-    }
-    string name = "/Users/Chris/Code/Images/stacks/superVox" + std::to_string(k)+ ".jpg";
-    string nameMM = "/Users/Chris/Code/Images/stacks/superPix" + std::to_string(k)+ ".jpg";
-    cv::imwrite(name,im2);
-    cv::imwrite(nameMM,im3);
-  }
-
-  /*
-  ---------------------------- 
-       END OF DEBUG SECTION 
-  ----------------------------
-  ---------------------------*/
   #ifdef DEBUG
   printf("[slicmodule.cpp] Returning outputs\n");
   #endif 
@@ -287,16 +230,14 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   /* -------------------------
        CLEAN UP 
   ---------------------------*/
-  // for(int k=0;k<dimZ;k++)
-  // {
-  //   delete ubuff[k] ;
-  //   delete labels[k] ;
-  // }
-  // delete ubuff;  
-  // delete labels; 
-  // delete labelsMM;
-  // delete ubb;
-
+  for(int k=0;k<dimZ;k++)
+  {
+    // delete [] ubuff[k] ; <-- this segfaults, why?
+    delete [] labels[k] ;
+  }
+  // delete[] ubuff;  
+  delete [] labels; 
+  
   /* -------------------------
        RETURN VAL
   ---------------------------*/
@@ -304,7 +245,7 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   return (PyObject*)returnval;
 }
 
-void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,int **labels)
+template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,T **labels)
 {
   PyObject* labelValue;
   npy_intp index[3];
@@ -320,9 +261,7 @@ void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,int **labels)
   #endif 
 
   for(int i =0;i<dims[0];i++)
-  {
-    
-    
+  { 
     idx =0;
 
     for(int j=0;j<dims[1];j++)
@@ -333,20 +272,38 @@ void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,int **labels)
         index[1] = j;
         index[0] = i; 
         
-        labelValue = (PyObject*)Py_BuildValue("i",(labels[i][idx]));
+        labelValue = (PyObject*)Py_BuildValue("d",(double)(labels[i][idx]));
         idx++;
 
-        // printf("Loopyloop - i:%d j:%d k:%d\n",i,j,k );
-        if(PyArray_SETITEM((PyArrayObject*)returnval, (char*)PyArray_GetPtr(returnval,index),labelValue ) < 0) // segfault here, because of char* ?
+        if(PyArray_SETITEM((PyArrayObject*)returnval, (char*)PyArray_GetPtr(returnval,index),labelValue ) < 0) 
           {  
             printf("[slicmodule.cpp] Error while setting items in output array.\n");
             return;
           }
-        
       }
     }
   }
+}
 
+static PyObject * my_set_callback(PyObject *dummy, PyObject *args)
+{
+    PyObject *result = NULL;
+    PyObject *temp;
+    printf("In my_set_callback ...\n");
+    if (PyArg_ParseTuple(args, "O:set_callback", &temp)) {
+        if (!PyCallable_Check(temp)) {
+            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+            return NULL;
+        }
+        Py_XINCREF(temp);         /* Add a reference to new callback */
+        Py_XDECREF(my_callback);  /* Dispose of previous callback */
+        my_callback = temp;       /* Remember new callback */
+        /* Boilerplate to return "None" */
+        Py_INCREF(Py_None);
+        result = Py_None;
+    }
+    printf("Getting out of my_set_callback ...\n");
+    return result;
 }
 
 // Defining module methods
@@ -356,6 +313,8 @@ static PyMethodDef SlicMethods[] = {
      "Computes 2D slic on the input image."},
      {"Compute3DSlic",  slic_Compute3DSlic, METH_VARARGS,
      "Computes 3D slic on the input volume."},
+     {"SetPyCallback",  my_set_callback, METH_VARARGS,
+     "Sets a Python callback function."},
     // ...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
@@ -375,6 +334,71 @@ initslic(void)
 }
 
 
+/*
+  ---------------------------- 
+        DEBUG SECTION 
+  ----------------------------
+  ---------------------------*/
+
+  // int idx1=0;
+  // int dimz = dims[0];
+  // int dimy = dims[1];
+  // int dimx = dims[2];
+  // UINT color = 0xff0000;
+  // int numLabelss = STEP*STEP;
+
+  // cv::Mat im2 = cv::Mat::zeros(dimy,dimx, CV_8UC1);
+  // cv::Mat im3 = cv::Mat::zeros(dimy,dimx, CV_8UC1);
+
+  // sidType* labelsMM = new sidType[dimx*dimy];
+  // UINT* ubb = new UINT[dimx*dimy];
+  
+  // printf("About to process volume slice by slice\n");
+  
+  // for(int k=0;k<dimz;k++)
+  //  {
+  //   idx1=0;
+
+  //   // Pass data from input to ubuff
+  //   int idx2 =0;
+  //   for(int i=0;i<dimy;i++)
+  //   {
+  //     for(int j=0;j<dimx;j++) 
+  //       {
+  //         ubb[idx2] = (UINT)inputVolume[k][i][j];
+  //         idx2 ++;
+  //       }
+  //   }
+    
+  //   lkm.DoSuperpixelSegmentation(ubb,dimx,dimy,labelsMM,numLabelss, 5, 2.0, 6);
+  //   DrawContoursAroundSegments(ubb, labelsMM, dimx,dimy, color);
+
+  //   for(int i=0;i<dimy;i++)
+  //   {
+  //     uchar* rowi = im2.ptr(i);
+  //     uchar* rowM = im3.ptr(i);
+  //     for(int j=0;j<dimx;j++) 
+  //       {
+  //         rowi[j] = labels[k][idx1];
+          
+  //         if(ubb[idx1] == color)
+  //           rowM[j] = 255;
+  //         else
+  //           rowM[j] = 0;
+  //         idx1++;
+  //       }
+  //   }
+  //   string name = "/Users/Chris/Code/Images/stacks/superVox" + std::to_string(k)+ ".jpg";
+  //   string nameMM = "/Users/Chris/Code/Images/stacks/superPix" + std::to_string(k)+ ".jpg";
+  //   cv::imwrite(name,im2);
+  //   cv::imwrite(nameMM,im3);
+  // }
+
+  /*
+  ---------------------------- 
+       END OF DEBUG SECTION 
+  ----------------------------
+  ---------------------------*/
 // DEBUG 
   // The following lines copy and save the input image. Used to debug inverted axis from numpy to C++
   // idx1=0;
