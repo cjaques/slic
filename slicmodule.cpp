@@ -12,7 +12,7 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
-#define DEBUG 
+// #define DEBUG 
 
 using namespace vigra;
 
@@ -204,7 +204,7 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   }
 
   lkm.DoSupervoxelSegmentationForGrayVolume(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M); // DoSupervoxelSegmentationForGrayVolume
-  UINT color = 0xff0000;
+  UINT color = 255;
   DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
   
   #ifdef DEBUG
@@ -215,13 +215,13 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   PyObject* bnd = PyArray_SimpleNew(3, dims, NPY_DOUBLE);
   PyArrayObject * returnval = (PyArrayObject*)PyArray_FROM_OTF(ret,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
   PyArrayObject * boundaries = (PyArrayObject*)PyArray_FROM_OTF(bnd,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
+  
   Extract_array3D<sidType>(returnval,dims,labels); // Gets labels into returnval
   Extract_array3D<double>(boundaries,dims,ubuff); // Gets boundaries
   
-  PyObject* result;
-
+  PyObject* callbackResult;
   if(my_callback!=NULL)
-     result = PyObject_CallObject(my_callback, (PyObject*)Py_BuildValue("(O)", boundaries ));
+     callbackResult = PyObject_CallObject(my_callback, (PyObject*)Py_BuildValue("(O)", boundaries ));
 
   #ifdef DEBUG
   printf("[slicmodule.cpp] Returning outputs\n");
@@ -250,10 +250,14 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
   PyObject* labelValue;
   npy_intp index[3];
   int idx =0;
+  
   double mean =0;
-  int max = 0;
-  int min = 100000;
-  int val;
+  double max = 0;
+  double min = 100000;
+  double val;
+  int countMin;
+  int countMax;
+
   double SIZE = dims[0]*dims[1]*dims[2];
 
   #ifdef DEBUG
@@ -272,7 +276,27 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
         index[1] = j;
         index[0] = i; 
         
-        labelValue = (PyObject*)Py_BuildValue("d",(double)(labels[i][idx]));
+        #ifdef DEBUG
+        val = (double)(labels[i][idx]);
+        if(val >= max)
+          if(val == max)
+            countMax ++;
+          else
+          {
+            countMax =0;
+            max = val;
+          }
+        if(val <= min)
+          if(val == min)
+            countMin ++;
+          else
+          {
+            countMin =0;
+            min = val;
+          }
+        #endif
+
+        labelValue = (PyObject*)Py_BuildValue("d",(double)(labels[i][idx]) );
         idx++;
 
         if(PyArray_SETITEM((PyArrayObject*)returnval, (char*)PyArray_GetPtr(returnval,index),labelValue ) < 0) 
@@ -283,13 +307,16 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
       }
     }
   }
+  #ifdef DEBUG
+  printf("[slicmodule.cpp] After loops in Extract3Darray, max label is : %f with count %d min label is %f with count %d \n",max, countMax, min, countMin );
+  #endif
 }
 
 static PyObject * my_set_callback(PyObject *dummy, PyObject *args)
 {
     PyObject *result = NULL;
     PyObject *temp;
-    printf("In my_set_callback ...\n");
+    
     if (PyArg_ParseTuple(args, "O:set_callback", &temp)) {
         if (!PyCallable_Check(temp)) {
             PyErr_SetString(PyExc_TypeError, "parameter must be callable");
@@ -302,7 +329,7 @@ static PyObject * my_set_callback(PyObject *dummy, PyObject *args)
         Py_INCREF(Py_None);
         result = Py_None;
     }
-    printf("Getting out of my_set_callback ...\n");
+    
     return result;
 }
 

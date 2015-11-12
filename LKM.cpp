@@ -798,9 +798,8 @@ void LKM::PerformLKMVoxelClustering(
 	vector< double > initdouble(sz, DBL_MAX);
 	vector< vector<double> > distvec(m_depth, initdouble);
 	//vector<double> distvec(sz, DBL_MAX);
-
 	//double invwt = 1.0/((STEP/20.0)*(STEP/20.0));
-        double invwt = 1.0/((STEP/cubeness)*(STEP/cubeness));
+    double invwt = 1.0/((STEP/cubeness)*(STEP/cubeness));
 
 	int x1, y1, x2, y2, z1, z2;
 	double l;
@@ -811,14 +810,6 @@ void LKM::PerformLKMVoxelClustering(
 		distvec.assign(m_depth, initdouble);
 		for( int n = 0; n < numk; n++ )
 		{
-                  /*
-			y1 = max(0,			kseedsy[n]-offset);
-			y2 = min(m_height,	kseedsy[n]+offset);
-			x1 = max(0,			kseedsx[n]-offset);
-			x2 = min(m_width,	kseedsx[n]+offset);
-			z1 = max(0,			kseedsz[n]-offset);
-			z2 = min(m_depth,	kseedsz[n]+offset);
-                  */
 			y1 = max(0.0,			kseedsy[n]-offset);
 			y2 = min((double)m_height,	kseedsy[n]+offset);
 			x1 = max(0.0,			kseedsx[n]-offset);
@@ -833,12 +824,10 @@ void LKM::PerformLKMVoxelClustering(
 					for( int x = x1; x < x2; x++ )
 					{
 						int i = y*m_width + x;
-						//_ASSERT( y < m_height && x < m_width && y >= 0 && x >= 0 );
-
 						l = m_lvecvec[z][i];
-
+						// Intensity term
 						dist = (l - kseedsl[n])*(l - kseedsl[n]);
-
+						// Neighborhood term
 						distxyz = (x - kseedsx[n])*(x - kseedsx[n]) +
                                                   (y - kseedsy[n])*(y - kseedsy[n]) +
                                                   (z - kseedsz[n])*(z - kseedsz[n]);
@@ -916,7 +905,7 @@ void LKM::PerformLKMVoxelClustering(
 void LKM::EnforceConnectivityForLargeImages(
 	const int					width,
 	const int					height,
-	sidType*&		       			labels,//input labels that need to be corrected to remove stray single labels
+	sidType*&		       		labels,//input labels that need to be corrected to remove stray single labels
 	int&						numlabels)
 {
 	const int dx8[8] = {-1, -1,  0,  1, 1, 1, 0, -1};

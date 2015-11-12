@@ -126,7 +126,7 @@ void DrawContoursAroundVoxels(
 
                     if( false == istaken[z][index] )//comment this to obtain internal contours
                       {
-                        if( labels[z][mainindex] != labels[z][index] ) np++;
+                        if( labels[i][mainindex] != labels[z][index] ) np++;
                       }
                   }
               }
