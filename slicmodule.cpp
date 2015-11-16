@@ -178,29 +178,29 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   int imgLength = dimX*dimY; 
   int imgDepth = dimZ;
   int numlabels;
-  double ** ubuff = new double*[imgDepth];
-  sidType ** labels = new sidType*[imgDepth]; 
+  double *** ubuff = new double*[imgDepth];
+  sidType *** labels = new sidType*[imgDepth]; 
   LKM lkm;
 
-  // Copy data from input to ubuff --> avoid this?
-  int idx =0;
-  for(int k=0;k<dimZ;k++)
-  {
-    ubuff[k] = new double[imgLength];
-    labels[k] = new sidType[imgLength];
-    idx = 0;
-    for(int j=0;j<dimY;j++)
-    {
-      for(int i=0;i<dimX;i++) 
-        {
-          ubuff[k][idx] = (double)inputVolume[k][j][i];
-          idx ++;
-        }
-    }
-  }
+  // // Copy data from input to ubuff --> avoid this?
+  // int idx =0;
+  // for(int k=0;k<dimZ;k++)
+  // {
+  //   ubuff[k] = new double[imgLength];
+  //   labels[k] = new sidType[imgLength];
+  //   idx = 0;
+  //   for(int j=0;j<dimY;j++)
+  //   {
+  //     for(int i=0;i<dimX;i++) 
+  //       {
+  //         ubuff[k][idx] = (double)inputVolume[k][j][i];
+  //         idx ++;
+  //       }
+  //   }
+  // }
 
   UINT color = 255;
-  lkm.DoSupervoxelSegmentationForGrayVolume(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M);
+  lkm.DoSupervoxelSegmentationForGrayVolume(inputVolume, dimX, dimY, dimZ, labels, numlabels, STEP, M);
   DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
   
   #ifdef DEBUG

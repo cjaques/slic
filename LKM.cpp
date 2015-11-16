@@ -1281,7 +1281,7 @@ void LKM::DoSupervoxelSegmentation(
 
 
 void LKM::DoSupervoxelSegmentationForGrayVolume(
-                                                double** const &	ubuffvec,
+                                                double***	ubuffvec,
                                                 const int			width,
                                                 const int			height,
                                                 const int			depth,
