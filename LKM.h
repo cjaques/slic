@@ -74,15 +74,16 @@ public:
 		const int&					STEP,
                 const double cubeness = 20);
 
-        void DoSupervoxelSegmentationForGrayVolume(
-                                                   double**		       			ubuffvec,
-                                                   const int					width,
-                                                   const int					height,
-                                                   const int					depth,
-                                                   sidType**&					klabels,
-                                                   int&						numlabels,
-                                                   const int					STEP,
-                                                   const double cubeness = 20);
+    void DoSupervoxelSegmentationForGrayVolume(
+                                               double** const&	   	ubuffvec,
+                                               const int			width,
+                                               const int			height,
+                                               const int			depth,
+                                               sidType**&			klabels,
+                                               int&					numlabels,
+                                               const int			STEP,
+                                               const double 		cubeness = 20
+                                               );
 
 	void SaveLabels(
                         sidType*&					labels,

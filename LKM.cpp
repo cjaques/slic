@@ -1281,14 +1281,14 @@ void LKM::DoSupervoxelSegmentation(
 
 
 void LKM::DoSupervoxelSegmentationForGrayVolume(
-                                                double**					ubuffvec,
-                                                const int					width,
-                                                const int					height,
-                                                const int					depth,
-                                                sidType**&					klabels,
-                                                int&						numlabels,
-                                                const int					STEP,
-                                                const double 				cubeness)
+                                                double** const &	ubuffvec,
+                                                const int			width,
+                                                const int			height,
+                                                const int			depth,
+                                                sidType**&			klabels,
+                                                int&				numlabels,
+                                                const int			STEP,
+                                                const double 		cubeness)
 {
 	vector<double> kseedsl(0);
 	vector<double> kseedsx(0);
@@ -1303,37 +1303,25 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
 	
 	//--------------------------------------------------
     unsigned long memSize = sizeof(int)*depth + depth*sz*sizeof(sidType);
-    printf("[LKM] memory required to run supervoxel algorithm = %ldMb\n", memSize/(1024*1024));
+    printf("[LKM.cpp] memory required to run supervoxel algorithm = %ldMb\n", memSize/(1024*1024));
 
-	klabels = new sidType*[depth];
+	// klabels = new sidType*[depth]; // memory allocated here and supressed in calling function, this is bad practice
+	double ** temp = m_lvecvec; // store adress of m_lvecvec in temp (otherwise segfault when cleaning memory)
     m_lvecvec = ubuffvec;
 
 	for( int d = 0; d < depth; d++ )
 	{
-		klabels[d] = new sidType[sz];
+		//klabels[d] = new sidType[sz];
 		for( int s = 0; s < sz; s++ )
 		{
 			klabels[d][s] = UNDEFINED_LABEL;
 		}
 	}
-	
-	//--------------------------------------------------
-	//DoRGBtoLABConversion(ubuffvec, m_lvecvec, m_avecvec, m_bvecvec);
-	//--------------------------------------------------
 
 	GetKValues_LABXYZ(kseedsl, kseedsx, kseedsy, kseedsz, STEP);
 
 	PerformLKMVoxelClustering(kseedsl, kseedsx, kseedsy, kseedsz, klabels, STEP, cubeness);
 	numlabels = kseedsl.size();
-
-        /*
-	EnforceConnectivityForLargeImages(width, height, depth, klabels, numlabels);
-	EnforceConnectivityForLargeImages(width, height, depth, klabels, numlabels);
-	EnforceConnectivityForLargeImages(width, height, depth, klabels, numlabels);
-	EnforceConnectivityForLargeImages(width, height, depth, klabels, numlabels);
-        */
-
-        //RelabelSupervoxels(width, height, depth, klabels, numlabels);
 
 	RelabelStraySupervoxels(width, height, depth, klabels, numlabels, STEP);
 
@@ -1341,6 +1329,8 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
 	// Save the labels if needed. Provide image name and the folder to save in.
 	//-------------------------------------------------------------------------
 	//SaveLabels(klabels, width, height, filename, savepath);
+
+	m_lvecvec = temp; // restore m_lvecvec adress
 }
 
 //===========================================================================

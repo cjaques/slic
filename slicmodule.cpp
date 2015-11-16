@@ -3,7 +3,6 @@
 #define PY_ARRAY_UNIQUE_SYMBOL slicmodule_PyArray_API
 // #define NO_IMPORT_ARRAY # <-- this has to be put in all the files where there's NO module declaration. We have a module declaration here.
 
-#include "vigra/numpy_array.hxx"
 #include "numpy/arrayobject.h"
 
 #include "LKM.h"
@@ -14,19 +13,16 @@
 
 // #define DEBUG 
 
-using namespace vigra;
-
 /* -----------------------------------------
         Functions
  ---------------------------------------*/
 void Extract_array2D(PyArrayObject *returnval,npy_intp *dims,UINT *ubuff, UINT color);
-// void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,sidType **labels);
 template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,T **labels);
 
 /* -----------------------------------------
         Python callbacks
  ---------------------------------------*/
-static PyObject *my_callback = NULL;
+static PyObject *PyCallback_setBoundaries = NULL;
 
 /* -----------------------------------------
         COMPUTE 2D SUPERPIXELS 
@@ -44,10 +40,10 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
     return NULL;
 
   #ifdef DEBUG
-  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \nSuperpixel parameters : STEP: %d, M: %f\n",dimX,dimY,STEP,M);
+  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d \n[slicmodule.cpp] Superpixel parameters : STEP: %d, M: %f\n",dimX,dimY,STEP,M);
   #endif
 
-  double ***inputVolume; // 3 dimensionnal double array
+  double ***inputVolume;
   int * dimensions;
 
   //Create C arrays from numpy objects:
@@ -155,13 +151,14 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   float M;
   int MAX_NUM_ITERATIONS;
 
-  if (!PyArg_ParseTuple(args, "Oifi", &inputArray,&STEP, &M,&MAX_NUM_ITERATIONS)) // Getting arrays in PyObjects
+  // Parsing arguments
+  if (!PyArg_ParseTuple(args, "Oifi", &inputArray,&STEP, &M,&MAX_NUM_ITERATIONS)) 
     return NULL;
 
-  double ***inputVolume; // 3 dimensionnal double array
+  double ***inputVolume;
   int * dimensions;
 
-  //Create C arrays from numpy objects:
+  //C arrays from numpy objects:
   int typenum = NPY_DOUBLE;
   PyArray_Descr *descr;
   descr = PyArray_DescrFromType(typenum);
@@ -172,19 +169,18 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   }
 
   #ifdef DEBUG
-  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d z: %d\nSupervoxel parameters : STEP: %d, M: %.1f\n",dims[0],dims[1],dims[2],STEP,M);
+  printf("[slicmodule.cpp] Arrays dimensions : x: %d, y: %d z: %d\n[slicmodule.cpp] Supervoxel parameters : STEP: %d, M: %.1f\n",dims[0],dims[1],dims[2],STEP,M);
   #endif
 
-  int dimZ = dims[0];
+  int dimZ = dims[0]; 
   int dimY = dims[1];
   int dimX = dims[2];
-  int imgLength = dimX*dimY;
+  int imgLength = dimX*dimY; 
   int imgDepth = dimZ;
-  double** ubuff = new double*[imgDepth];
-  sidType** labels = new sidType*[imgDepth];
+  int numlabels;
+  double ** ubuff = new double*[imgDepth];
+  sidType ** labels = new sidType*[imgDepth]; 
   LKM lkm;
-
-  int numlabels = STEP*STEP*STEP*2; 
 
   // Copy data from input to ubuff --> avoid this?
   int idx =0;
@@ -203,8 +199,8 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
     }
   }
 
-  lkm.DoSupervoxelSegmentationForGrayVolume(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M); // DoSupervoxelSegmentationForGrayVolume
   UINT color = 255;
+  lkm.DoSupervoxelSegmentationForGrayVolume(ubuff, dimX, dimY, dimZ, labels, numlabels, STEP, M);
   DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
   
   #ifdef DEBUG
@@ -215,13 +211,13 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   PyObject* bnd = PyArray_SimpleNew(3, dims, NPY_DOUBLE);
   PyArrayObject * returnval = (PyArrayObject*)PyArray_FROM_OTF(ret,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
   PyArrayObject * boundaries = (PyArrayObject*)PyArray_FROM_OTF(bnd,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
-  
+
   Extract_array3D<sidType>(returnval,dims,labels); // Gets labels into returnval
   Extract_array3D<double>(boundaries,dims,ubuff); // Gets boundaries
   
   PyObject* callbackResult;
-  if(my_callback!=NULL)
-     callbackResult = PyObject_CallObject(my_callback, (PyObject*)Py_BuildValue("(O)", boundaries ));
+  if(PyCallback_setBoundaries!=NULL)
+     callbackResult = PyObject_CallObject(PyCallback_setBoundaries, (PyObject*)Py_BuildValue("(O)", boundaries ));
 
   #ifdef DEBUG
   printf("[slicmodule.cpp] Returning outputs\n");
@@ -232,10 +228,10 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   ---------------------------*/
   for(int k=0;k<dimZ;k++)
   {
-    // delete [] ubuff[k] ; <-- this segfaults, why?
+    delete [] ubuff[k] ;  
     delete [] labels[k] ;
   }
-  // delete[] ubuff;  
+  delete[] ubuff;  
   delete [] labels; 
   
   /* -------------------------
@@ -250,13 +246,6 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
   PyObject* labelValue;
   npy_intp index[3];
   int idx =0;
-  
-  double mean =0;
-  double max = 0;
-  double min = 100000;
-  double val;
-  int countMin;
-  int countMax;
 
   double SIZE = dims[0]*dims[1]*dims[2];
 
@@ -275,26 +264,6 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
         index[2] = k;
         index[1] = j;
         index[0] = i; 
-        
-        #ifdef DEBUG
-        val = (double)(labels[i][idx]);
-        if(val >= max)
-          if(val == max)
-            countMax ++;
-          else
-          {
-            countMax =0;
-            max = val;
-          }
-        if(val <= min)
-          if(val == min)
-            countMin ++;
-          else
-          {
-            countMin =0;
-            min = val;
-          }
-        #endif
 
         labelValue = (PyObject*)Py_BuildValue("d",(double)(labels[i][idx]) );
         idx++;
@@ -307,12 +276,9 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
       }
     }
   }
-  #ifdef DEBUG
-  printf("[slicmodule.cpp] After loops in Extract3Darray, max label is : %f with count %d min label is %f with count %d \n",max, countMax, min, countMin );
-  #endif
 }
 
-static PyObject * my_set_callback(PyObject *dummy, PyObject *args)
+static PyObject * setPythonBoundariesCallback(PyObject *dummy, PyObject *args)
 {
     PyObject *result = NULL;
     PyObject *temp;
@@ -323,8 +289,9 @@ static PyObject * my_set_callback(PyObject *dummy, PyObject *args)
             return NULL;
         }
         Py_XINCREF(temp);         /* Add a reference to new callback */
-        Py_XDECREF(my_callback);  /* Dispose of previous callback */
-        my_callback = temp;       /* Remember new callback */
+        Py_XDECREF(PyCallback_setBoundaries);  /* Dispose of previous callback */
+        PyCallback_setBoundaries = temp;       /* Remember new callback */
+
         /* Boilerplate to return "None" */
         Py_INCREF(Py_None);
         result = Py_None;
@@ -333,16 +300,15 @@ static PyObject * my_set_callback(PyObject *dummy, PyObject *args)
     return result;
 }
 
+
 // Defining module methods
 static PyMethodDef SlicMethods[] = {
-     // ...
      {"Compute2DSlic",  slic_Compute2DSlic, METH_VARARGS,
      "Computes 2D slic on the input image."},
      {"Compute3DSlic",  slic_Compute3DSlic, METH_VARARGS,
      "Computes 3D slic on the input volume."},
-     {"SetPyCallback",  my_set_callback, METH_VARARGS,
+     {"SetPyCallback",  setPythonBoundariesCallback, METH_VARARGS,
      "Sets a Python callback function."},
-    // ...
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
@@ -351,13 +317,11 @@ static PyMethodDef SlicMethods[] = {
 PyMODINIT_FUNC
 initslic(void)
 {
-
     PyObject *m;
     import_array();
     m = Py_InitModule("slic", SlicMethods);
     if (m == NULL)
         return;
-
 }
 
 
@@ -366,6 +330,29 @@ initslic(void)
         DEBUG SECTION 
   ----------------------------
   ---------------------------*/
+
+// #ifdef DEBUG
+//         val = (double)(labels[i][idx]);
+//         if(val >= max)
+//           if(val == max)
+//             countMax ++;
+//           else
+//           {
+//             countMax =0;
+//             max = val;
+//           }
+//         if(val <= min)
+//           if(val == min)
+//             countMin ++;
+//           else
+//           {
+//             countMin =0;
+//             min = val;
+//           }
+//         #endif
+
+  // ---------------
+
 
   // int idx1=0;
   // int dimz = dims[0];

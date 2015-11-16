@@ -144,6 +144,7 @@ void DrawContoursAroundVoxels(
           }
       }
     }
+    istaken.clear();
 }
 
 
