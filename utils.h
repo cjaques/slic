@@ -32,8 +32,8 @@ void DrawContoursAroundSegments(
                                 const int&        height,
                                 const UINT&       color );
 void DrawContoursAroundVoxels(
-                                double**      img,    //contours will be drawn on this image
-                                sidType**     labels,
+                                double***     img,    //contours will be drawn on this image
+                                sidType***    labels,
                                 const int&    width,
                                 const int&    height,
                                 const int&    depth,

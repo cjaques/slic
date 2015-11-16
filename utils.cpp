@@ -89,8 +89,8 @@ void DrawContoursAroundSegments(
 /// statement inside the loop that looks at neighbourhood.
 //=================================================================================
 void DrawContoursAroundVoxels(
-                                double**      img,    //contours will be drawn on this image
-                                sidType**     labels,
+                                double***     img,    //contours will be drawn on this image
+                                sidType***    labels,
                                 const int&    width,
                                 const int&    height,
                                 const int&    depth,
@@ -126,19 +126,19 @@ void DrawContoursAroundVoxels(
 
                     if( false == istaken[z][index] )//comment this to obtain internal contours
                       {
-                        if( labels[i][mainindex] != labels[z][index] ) np++;
+                        if( labels[i][j][k] != labels[z][y][x] ) np++;
                       }
                   }
               }
             if( np > 1 )
               {
                 istaken[i][mainindex] = true;
-                img[i][mainindex] = (double)color;
+                img[i][j][k] = (double)color;
                 cind++;
               }
               else
               {
-                img[i][mainindex] = 0;
+                img[i][j][k] = 0;
               }
             mainindex++;
           }

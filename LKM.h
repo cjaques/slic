@@ -588,7 +588,7 @@ private:
 	double*									m_avec;
 	double*									m_bvec;
 
-	double**								m_lvecvec;
+	double***								m_lvecvec;
 	double**								m_avecvec;
 	double**								m_bvecvec;
 

@@ -440,7 +440,7 @@ void LKM::GetKValues_LABXYZ(
 
 				//_ASSERT(n < numseeds);
 				
-				kseedsl[n] = m_lvecvec[d][i];
+				kseedsl[n] = m_lvecvec[d][y][x];
 				kseedsx[n] = (x*STEP+xoff+xe);
 				kseedsy[n] = (y*STEP+yoff+ye);
 				kseedsz[n] = d;
@@ -1305,13 +1305,13 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
     unsigned long memSize = sizeof(int)*depth + depth*sz*sizeof(sidType);
     printf("[LKM.cpp] memory required to run supervoxel algorithm = %ldMb\n", memSize/(1024*1024));
 
-	// klabels = new sidType*[depth]; // memory allocated here and supressed in calling function, this is bad practice
-	double ** temp = m_lvecvec; // store adress of m_lvecvec in temp (otherwise segfault when cleaning memory)
+	klabels = new sidType*[depth];
+	double *** temp = m_lvecvec; // store adress of m_lvecvec in temp (otherwise segfault when cleaning memory)
     m_lvecvec = ubuffvec;
 
 	for( int d = 0; d < depth; d++ )
 	{
-		//klabels[d] = new sidType[sz];
+		klabels[d] = new sidType[sz];
 		for( int s = 0; s < sz; s++ )
 		{
 			klabels[d][s] = UNDEFINED_LABEL;

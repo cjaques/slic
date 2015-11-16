@@ -8,16 +8,18 @@
 #include "LKM.h"
 #include "utils.h"
 
+#define DEBUG 
+
+#ifdef DEBUG
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
-
-// #define DEBUG 
+#endif
 
 /* -----------------------------------------
         Functions
  ---------------------------------------*/
 void Extract_array2D(PyArrayObject *returnval,npy_intp *dims,UINT *ubuff, UINT color);
-template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,T **labels);
+template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,T ***labels);
 
 /* -----------------------------------------
         Python callbacks
@@ -36,7 +38,8 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
   int STEP;
   float M;
   int MAX_NUM_ITERATIONS;
-  if (!PyArg_ParseTuple(args, "Oifi", &inputArray,&STEP,&M,&MAX_NUM_ITERATIONS)) // Getting arrays in PyObjects
+  // Parsing arrays in PyObjects
+  if (!PyArg_ParseTuple(args, "Oifi", &inputArray,&STEP,&M,&MAX_NUM_ITERATIONS)) 
     return NULL;
 
   #ifdef DEBUG
@@ -46,7 +49,7 @@ static PyObject * slic_Compute2DSlic(PyObject *self, PyObject *args)
   double ***inputVolume;
   int * dimensions;
 
-  //Create C arrays from numpy objects:
+  //C arrays from numpy objects:
   int typenum = NPY_DOUBLE;
   PyArray_Descr *descr;
   descr = PyArray_DescrFromType(typenum);
@@ -178,26 +181,9 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   int imgLength = dimX*dimY; 
   int imgDepth = dimZ;
   int numlabels;
-  double *** ubuff = new double*[imgDepth];
-  sidType *** labels = new sidType*[imgDepth]; 
+  double *** ubuff = new double**[imgDepth];
+  sidType ** labels;
   LKM lkm;
-
-  // // Copy data from input to ubuff --> avoid this?
-  // int idx =0;
-  // for(int k=0;k<dimZ;k++)
-  // {
-  //   ubuff[k] = new double[imgLength];
-  //   labels[k] = new sidType[imgLength];
-  //   idx = 0;
-  //   for(int j=0;j<dimY;j++)
-  //   {
-  //     for(int i=0;i<dimX;i++) 
-  //       {
-  //         ubuff[k][idx] = (double)inputVolume[k][j][i];
-  //         idx ++;
-  //       }
-  //   }
-  // }
 
   UINT color = 255;
   lkm.DoSupervoxelSegmentationForGrayVolume(inputVolume, dimX, dimY, dimZ, labels, numlabels, STEP, M);
@@ -241,7 +227,7 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   return (PyObject*)returnval;
 }
 
-template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,T **labels)
+template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *dims,T ***labels)
 {
   PyObject* labelValue;
   npy_intp index[3];
@@ -265,8 +251,8 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
         index[1] = j;
         index[0] = i; 
 
-        labelValue = (PyObject*)Py_BuildValue("d",(double)(labels[i][idx]) );
-        idx++;
+        labelValue = (PyObject*)Py_BuildValue("d",(double)(labels[i][j][k]) );
+        // idx++;
 
         if(PyArray_SETITEM((PyArrayObject*)returnval, (char*)PyArray_GetPtr(returnval,index),labelValue ) < 0) 
           {  
