@@ -79,7 +79,7 @@ public:
                                                const int			width,
                                                const int			height,
                                                const int			depth,
-                                               sidType**&			klabels,
+                                               sidType***&			klabels,
                                                int&					numlabels,
                                                const int			STEP,
                                                const double 		cubeness = 20
@@ -128,7 +128,7 @@ private:
 		vector<double>&				kseedsx,
 		vector<double>&				kseedsy,
 		vector<double>&				kseedsz,
-		sidType**&						klabels,
+		sidType**&					klabels,
 		const int&					STEP,
                 const double cubeness);
 
@@ -138,7 +138,7 @@ private:
 		vector<double>&				kseedsx,
 		vector<double>&				kseedsy,
 		vector<double>&				kseedsz,
-		sidType**&     		       		klabels,
+		sidType***&     		       		klabels,
 		const int&		       		STEP,
                 const double cubeness);
 
@@ -324,14 +324,14 @@ private:
 		const int&					width,
 		const int&					height,
 		const int&					depth,
-		sidType**&	       				labels,
+		sidType***&	       				labels,
 		int&						numlabels);
 
         void RelabelStraySupervoxels(
                                      const int&					width,
                                      const int&					height,
                                      const int&					depth,
-                                     sidType**&					labels,
+                                     sidType***&					labels,
                                      int&					numlabels,
                                      const int&					STEP);
 
@@ -364,13 +364,13 @@ private:
 	}
 
 	void FindNext(
-		sidType**&     					labels,
-		sidType**&	       				nlabels,
+		sidType***&					labels,
+		sidType***&    				nlabels,
 		const int&					depth,
 		const int&					height,
 		const int&					width,
-                std::stack<sPixel>& listPixels,
-		const sidType&					lab)
+        std::stack<sPixel>& 		listPixels,
+		const sidType&				lab)
 	{
           sPixel pix;
           int d,h,w;
@@ -381,17 +381,17 @@ private:
               d = pix.z;
               h = pix.y;
               w = pix.x;
-              sidType oldlab = labels[d][h*width+w];
+              sidType oldlab = labels[d][h][w];
               for( int i = 0; i < 6; i++ )
 		{
                   int z = d+dz6[i];int y = h+dy6[i];int x = w+dx6[i];
                   if( (z < depth && z >= 0) && (y < height && y >= 0) && (x < width && x >= 0) )
                     {
-                      int ind = y*width+x;
+                      // int ind = y*width+x;
                       //if(nlabels[z][ind] < 0 && labels[z][ind] == oldlab )
-                      if(nlabels[z][ind] == UNDEFINED_LABEL && labels[z][ind] == oldlab )
+                      if(nlabels[z][y][x] == UNDEFINED_LABEL && labels[z][y][x] == oldlab )
                         {
-                          nlabels[z][ind] = lab;
+                          nlabels[z][y][x] = lab;
                           sPixel newPix;
                           newPix.x = x;
                           newPix.y = y;
@@ -529,13 +529,13 @@ private:
 	///	Helper function for RelabelStraySupervoxels. Overloaded version.
 	//===========================================================================
 	void FindNext(
-		sidType**&     					labels,
-		sidType**&	       				nlabels,
+		sidType***&					labels,
+		sidType***&    				nlabels,
 		const int&					depth,
 		const int&					height,
 		const int&					width,
-                std::stack<sPixel>& listPixels,
-		const sidType&					lab,
+        std::stack<sPixel>& 		listPixels,
+		const sidType&				lab,
 		int*&						xvec,
 		int*&						yvec,
 		int*&						zvec,
@@ -550,7 +550,7 @@ private:
               d = pix.z;
               h = pix.y;
               w = pix.x;
-              sidType oldlab = labels[d][h*width+w];
+              sidType oldlab = labels[d][h][w];
               for( int i = 0; i < 10; i++ )
 		{
                   int z = d+dz10[i];
@@ -558,16 +558,16 @@ private:
                   int x = w+dx10[i];
                   if( (z < depth && z >= 0) && (y < height && y >= 0) && (x < width && x >= 0) )
                     {
-                      int ind = y*width+x;
+                      // int ind = y*width+x;
                       //if(nlabels[z][ind] < 0 && labels[z][ind] == oldlab )
-                      if(nlabels[z][ind] == UNDEFINED_LABEL && labels[z][ind] == oldlab )
+                      if(nlabels[z][y][x] == UNDEFINED_LABEL && labels[z][y][x] == oldlab )
                         {
                           xvec[count] = x;
                           yvec[count] = y;
                           zvec[count] = z;
                           count++;
 
-                          nlabels[z][ind] = lab;
+                          nlabels[z][y][x] = lab;
                           sPixel newPix;
                           newPix.x = x;
                           newPix.y = y;

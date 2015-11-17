@@ -182,12 +182,13 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   int imgDepth = dimZ;
   int numlabels;
   double *** ubuff = new double**[imgDepth];
-  sidType ** labels;
+  sidType *** labels;
   LKM lkm;
 
   UINT color = 255;
   lkm.DoSupervoxelSegmentationForGrayVolume(inputVolume, dimX, dimY, dimZ, labels, numlabels, STEP, M);
-  DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
+  printf("Huraaaaayyyy-------\n");
+  // DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
   
   #ifdef DEBUG
   printf("[slicmodule.cpp] Output array ready, casting PyArray to PyObject\n");
@@ -199,11 +200,11 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   PyArrayObject * boundaries = (PyArrayObject*)PyArray_FROM_OTF(bnd,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
 
   Extract_array3D<sidType>(returnval,dims,labels); // Gets labels into returnval
-  Extract_array3D<double>(boundaries,dims,ubuff); // Gets boundaries
+  // Extract_array3D<double>(boundaries,dims,ubuff); // Gets boundaries
   
-  PyObject* callbackResult;
-  if(PyCallback_setBoundaries!=NULL)
-     callbackResult = PyObject_CallObject(PyCallback_setBoundaries, (PyObject*)Py_BuildValue("(O)", boundaries ));
+  // PyObject* callbackResult;
+  // if(PyCallback_setBoundaries!=NULL)
+  //    callbackResult = PyObject_CallObject(PyCallback_setBoundaries, (PyObject*)Py_BuildValue("(O)", boundaries ));
 
   #ifdef DEBUG
   printf("[slicmodule.cpp] Returning outputs\n");
@@ -212,13 +213,13 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   /* -------------------------
        CLEAN UP 
   ---------------------------*/
-  for(int k=0;k<dimZ;k++)
-  {
-    delete [] ubuff[k] ;  
-    delete [] labels[k] ;
-  }
-  delete[] ubuff;  
-  delete [] labels; 
+  // for(int k=0;k<dimZ;k++)
+  // {
+  //   delete [] ubuff[k] ;  
+  //   delete [] labels[k] ;
+  // }
+  // delete[] ubuff;  
+  // delete [] labels; 
   
   /* -------------------------
        RETURN VAL
