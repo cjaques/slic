@@ -1439,7 +1439,7 @@ void LKM::RelabelStraySupervoxels(
 	int&						numlabels,
 	const int&					STEP)
 {
-	int sz = width*height;
+	// int sz = width*height;
 	const int SUPSZ = STEP*STEP*STEP;
 	int adjlabel(0);//adjacent label
 	int* xvec = new int[SUPSZ*4];//a large safe size

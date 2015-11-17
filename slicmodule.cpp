@@ -187,7 +187,6 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
 
   UINT color = 255;
   lkm.DoSupervoxelSegmentationForGrayVolume(inputVolume, dimX, dimY, dimZ, labels, numlabels, STEP, M);
-  printf("Huraaaaayyyy-------\n");
   // DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
   
   #ifdef DEBUG
@@ -234,7 +233,7 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
   npy_intp index[3];
   int idx =0;
 
-  double SIZE = dims[0]*dims[1]*dims[2];
+  // double SIZE = dims[0]*dims[1]*dims[2];
 
   #ifdef DEBUG
   printf("[slicmodule.cpp] Extract3Darray - Dims : %d - %d - %d \n",dims[0],dims[1],dims[2]);
