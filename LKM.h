@@ -3,6 +3,7 @@
 // Copyright (C) Radhakrishna Achanta
 // All rights reserved
 // Email: firstname.lastname@epfl.ch
+// File modified by Christian Jaques
 //////////////////////////////////////////////////////////////////////
 
 #ifndef _LKM_H_INCLUDED_
@@ -324,27 +325,27 @@ private:
 		const int&					width,
 		const int&					height,
 		const int&					depth,
-		sidType***&	       				labels,
+		sidType***&	       			labels,
 		int&						numlabels);
 
         void RelabelStraySupervoxels(
-                                     const int&					width,
-                                     const int&					height,
-                                     const int&					depth,
-                                     sidType***&					labels,
-                                     int&					numlabels,
-                                     const int&					STEP);
+                                     const int&		width,
+                                     const int&		height,
+                                     const int&		depth,
+                                     sidType***&	labels,
+                                     int&			numlabels,
+                                     const int&		STEP);
 
 	void FindNext(
-		sidType**&     					labels,
-		sidType**&	       				nlabels,
-		const int&					depth,
-		const int&					height,
-		const int&					width,
-		const int&					d,
-		const int&					h,
-		const int&					w,
-		const sidType&					lab)
+		sidType**&     	labels,
+		sidType**&	    nlabels,
+		const int&		depth,
+		const int&		height,
+		const int&		width,
+		const int&		d,
+		const int&		h,
+		const int&		w,
+		const sidType&	lab)
 	{
 		sidType oldlab = labels[d][h*width+w];
 		for( int i = 0; i < 6; i++ )
@@ -353,8 +354,7 @@ private:
 			if( (z < depth && z >= 0) && (y < height && y >= 0) && (x < width && x >= 0) )
 			{
 				int ind = y*width+x;
-				//if(nlabels[z][ind] < 0 && labels[z][ind] == oldlab )
-                                if(nlabels[z][ind] == UNDEFINED_LABEL && labels[z][ind] == oldlab )
+				if(nlabels[z][ind] == UNDEFINED_LABEL && labels[z][ind] == oldlab )
 				{
 					nlabels[z][ind] = lab;
 					FindNext(labels, nlabels, depth, height, width, z, y, x, lab);
@@ -364,14 +364,14 @@ private:
 	}
 
 	void FindNext(
-		sidType***&					labels,
-		sidType***&    				nlabels,
-		const int&					depth,
-		const int&					height,
-		const int&					width,
-        std::stack<sPixel>& 		listPixels,
-		const sidType&				lab)
-	{
+		sidType***&				labels,
+		sidType***&    			nlabels,
+		const int&				depth,
+		const int&				height,
+		const int&				width,
+        std::stack<sPixel>& 	listPixels,
+		const sidType&			lab)
+		{
           sPixel pix;
           int d,h,w;
           while(!listPixels.empty())
@@ -383,12 +383,10 @@ private:
               w = pix.x;
               sidType oldlab = labels[d][h][w];
               for( int i = 0; i < 6; i++ )
-		{
+			  {
                   int z = d+dz6[i];int y = h+dy6[i];int x = w+dx6[i];
                   if( (z < depth && z >= 0) && (y < height && y >= 0) && (x < width && x >= 0) )
                     {
-                      // int ind = y*width+x;
-                      //if(nlabels[z][ind] < 0 && labels[z][ind] == oldlab )
                       if(nlabels[z][y][x] == UNDEFINED_LABEL && labels[z][y][x] == oldlab )
                         {
                           nlabels[z][y][x] = lab;
@@ -399,9 +397,9 @@ private:
                           listPixels.push(newPix);
                         }
                     }
-		}
+			  }
             }
-	}
+		}
 
 
 	//===========================================================================
@@ -411,8 +409,8 @@ private:
 	/// labels in increasing order. At the same time, return the number of labels.
 	//===========================================================================
 	void CountAndRelabel(
-		sidType*&      					labels,
-		int&						numlabels) 
+						sidType*& labels,
+						int&	  numlabels) 
 	{
 		int sz = m_width*m_height;
 		int maxlabel(-1);
@@ -444,8 +442,8 @@ private:
 	/// labels in increasing order. At the same time, return the number of labels.
 	//===========================================================================
 	void CountAndRelabel(
-		sidType**&	       				labels,
-		int&						numlabels) 
+		sidType**&	    labels,
+		int&			numlabels) 
 	{
 		int sz = m_width*m_height;
 		int maxlabel(-1);
@@ -486,19 +484,19 @@ private:
 	///	Helper function for RelabelStraySupervoxels. Overloaded version.
 	//===========================================================================
 	void FindNext(
-                      sidType**&     			labels,
-		sidType**&	      				nlabels,
-		const int&					depth,
-		const int&					height,
-		const int&					width,
-		const int&					d,
-		const int&					h,
-		const int&					w,
-		const sidType&					lab,
-		int*&						xvec,
-		int*&						yvec,
-		int*&						zvec,
-		int&						count)
+        sidType**&	   	labels,
+		sidType**&	   	nlabels,
+		const int&		depth,
+		const int&		height,
+		const int&		width,
+		const int&		d,
+		const int&		h,
+		const int&		w,
+		const sidType&	lab,
+		int*&			xvec,
+		int*&			yvec,
+		int*&			zvec,
+		int&			count)
 	{
 		sidType oldlab = labels[d][h*width+w];
 		for( int i = 0; i < 10; i++ )

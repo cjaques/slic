@@ -3,6 +3,7 @@
 // Copyright (C) Radhakrishna Achanta
 // All rights reserved
 // Email: firstname.lastname@epfl.ch
+// File modified by Christian Jaques
 //////////////////////////////////////////////////////////////////////
 
 #ifdef WINDOWS
@@ -788,6 +789,8 @@ void LKM::PerformLKMVoxelClustering(
 	int offset = STEP;
 	//----------------
 
+	// printf("PerformLKMVoxelClustering : num seeds is : %d\n",numk );
+
 	vector<double> clustersize(numk, 0);
 	vector<double> inv(numk, 0);//to store 1/clustersize[k] values
 
@@ -1214,7 +1217,7 @@ void LKM::DoSuperpixelSegmentation(
 /// There is option to save the labels if needed. However the filename and
 /// path need to be provided.
 //===========================================================================
-void LKM::DoSupervoxelSegmentation(
+void LKM::DoSupervoxelSegmentation( // Chris modified this function because we only need gray images. This have to be added
 	UINT**&						ubuffvec,
 	const int&					width,
 	const int&					height,
@@ -1310,27 +1313,25 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
     unsigned long memSize = sizeof(int)*depth + depth*sz*sizeof(sidType);
     printf("[LKM.cpp] memory required to run supervoxel algorithm = %ldMb\n", memSize/(1024*1024));
 
-	klabels = new sidType**[depth];
+	// klabels = new sidType**[depth]; // As we use klabels from calling function, memory allocated there.
 	double *** temp = m_lvecvec; // store adress of m_lvecvec in temp (otherwise segfault when cleaning memory)
     m_lvecvec = ubuffvec;
 
-	for( int d = 0; d < depth; d++ )
-	{
-		klabels[d] = new sidType*[height];
-		for(int e =0;e<height;e++)
-		{
-			klabels[d][e] = new sidType[width];	
-			for( int s = 0; s < width; s++ )
-			{
-				klabels[d][e][s] = UNDEFINED_LABEL;
-			}
-		}
-	}
-	
+	// for( int d = 0; d < depth; d++ )
+	// {
+	// 	klabels[d] = new sidType*[height];
+	// 	for(int e =0;e<height;e++)
+	// 	{
+	// 		klabels[d][e] = new sidType[width];	
+	// 		for( int s = 0; s < width; s++ )
+	// 		{
+	// 			klabels[d][e][s] = UNDEFINED_LABEL;
+	// 		}
+	// 	}
+	// }
 	GetKValues_LABXYZ(kseedsl, kseedsx, kseedsy, kseedsz, STEP);
 	PerformLKMVoxelClustering(kseedsl, kseedsx, kseedsy, kseedsz, klabels, STEP, cubeness);
 	numlabels = kseedsl.size();
-	printf("RelabelStraySupervoxels\n");
 	RelabelStraySupervoxels(width, height, depth, klabels, numlabels, STEP);
 	//-------------------------------------------------------------------------
 	// Save the labels if needed. Provide image name and the folder to save in.
@@ -1338,89 +1339,6 @@ void LKM::DoSupervoxelSegmentationForGrayVolume(
 	//SaveLabels(klabels, width, height, filename, savepath);
 
 	m_lvecvec = temp; // restore m_lvecvec adress
-}
-
-//===========================================================================
-///	RelabelSupervoxels
-///
-///	Some supervoxels may be unconnected, Relabel them. Recursive algorithm
-/// used here, can crash if stack overflows. This will only happen if the
-/// superpixels are very large.
-//===========================================================================
-void LKM::RelabelSupervoxels(
-	const int&					width,
-	const int&					height,
-	const int&					depth,
-	sidType***&		       		labels,
-	int&						numlabels)
-{
-	// int sz = width*height;
-	//------------------
-	// memory allocation
-	//------------------
-	sidType*** nlabels = new sidType**[depth];
-	{
-	for( int d = 0; d < depth; d++ )
-	{
-		nlabels[d] = new sidType*[height];
-		for(int e = 0;e<height;e++)
-		{
-			nlabels[d][e] = new sidType[width];	
-			for( int i = 0; i < width; i++ ) nlabels[d][e][i] = UNDEFINED_LABEL;
-		}
-	}}
-	//------------------
-	// labeling
-	//------------------
-	sidType lab(0);
-	{for( int d = 0; d < depth; d++ )
-	{
-		int i(0);
-		for( int h = 0; h < height; h++ )
-		{
-			for( int w = 0; w < width; w++ )
-			{
-	            //if(nlabels[d][i] < 0)
-	            if(nlabels[d][h][w] == UNDEFINED_LABEL)
-				{
-					nlabels[d][h][w] = lab;
-					//FindNext(labels, nlabels, depth, height, width, d, h, w, lab);
-                                        //Al
-                    std::stack<sPixel> listPixels;
-                    sPixel pix;
-                    pix.x = w; pix.y = h; pix.z = d;
-                    listPixels.push(pix);
-					FindNext(labels, nlabels, depth, height, width, listPixels, lab);
-					lab++;
-				} 
-				i++;
-			}
-		}
-	}}
-	//------------------
-	// mem de-allocation
-	//------------------
-        /*
-	{for( int d = 0; d < depth; d++ )
-	{
-		for( int i = 0; i < sz; i++ ) labels[d][i] = nlabels[d][i];
-	}}
-	{for( int d = 0; d < depth; d++ )
-	{
-		delete [] nlabels[d];
-	}}
-	delete [] nlabels;
-        */
-	for( int d = 0; d < depth; d++ )
-	{
-		delete [] labels[d];
-	}
-	delete [] labels;
-        labels = nlabels;
-
-	//------------------
-	numlabels = lab;
-	//------------------
 }
 
 
@@ -1439,7 +1357,7 @@ void LKM::RelabelStraySupervoxels(
 	int&						numlabels,
 	const int&					STEP)
 {
-	// int sz = width*height;
+
 	const int SUPSZ = STEP*STEP*STEP;
 	int adjlabel(0);//adjacent label
 	int* xvec = new int[SUPSZ*4];//a large safe size
@@ -1449,7 +1367,7 @@ void LKM::RelabelStraySupervoxels(
 	// memory allocation
 	//------------------
 	sidType*** nlabels = new sidType**[depth];
-	{for( int d = 0; d < depth; d++ )
+	for( int d = 0; d < depth; d++ )
 	{
 		nlabels[d] = new sidType*[height];
 		for(int e=0;e<height;e++)
@@ -1457,20 +1375,19 @@ void LKM::RelabelStraySupervoxels(
 			nlabels[d][e] = new sidType[width];
 			for( int i = 0; i < width; i++ ) nlabels[d][e][i] = UNDEFINED_LABEL;	
 		}
-	}}
+	}
 
 	//------------------
 	// labeling
 	//------------------
 	sidType lab(0);
-	{for( int d = 0; d < depth; d++ )
+	for( int d = 0; d < depth; d++ )
 	{
 		int i(0);
 		for( int h = 0; h < height; h++ )
 		{
 			for( int w = 0; w < width; w++ )
 			{
-                          //if(nlabels[d][i] < 0)
                 if(nlabels[d][h][w] == UNDEFINED_LABEL)
 				{
 					nlabels[d][h][w] = lab;
@@ -1484,31 +1401,13 @@ void LKM::RelabelStraySupervoxels(
 						int z = d + dz10[n];
 						if( (x >= 0 && x < width) && (y >= 0 && y < height) && (z >= 0 && z < depth) )
 						{
-							// int nindex = y*width + x;
-							//if(nlabels[z][nindex] >= 0) adjlabel = nlabels[z][nindex];
 							if(nlabels[z][y][x] != UNDEFINED_LABEL) adjlabel = nlabels[z][y][x];
 						}
 					}}
-					//{for( int i = -1; i <= 1; i++ )
-					//{
-					//	for(int j = -1; j <= 1; j++ )
-					//	{
-					//		for( int k = -1; k <= 1; k++ )
-					//		{
-					//			int z = d+i; int y = h+j; int x = w+k;
-					//			if( (x >= 0 && x < width) && (y >= 0 && y < height) && (z >= 0 && z < depth) )
-					//			{
-					//				int nindex = y*width + x;
-					//				if(nlabels[nindex] >= 0) adjlabel = nlabels[d][nindex];
-					//			}
-					//		}
-					//	}
-					//}}
+
 					xvec[0] = w; yvec[0] = h; zvec[0] = d;
 					int count(1);
 					//--------------------------------------------------------
-					//FindNext(labels, nlabels, depth, height, width, d, h, w, lab, xvec, yvec, zvec, count);
-                                        // Al
                     std::stack<sPixel> listPixels;
                     sPixel pix;
                     pix.x = w; pix.y = h; pix.z = d;
@@ -1522,7 +1421,6 @@ void LKM::RelabelStraySupervoxels(
 					{
 						for( int c = 0; c < count; c++ )
 						{
-							// int ind = yvec[c]*width+xvec[c];
 							nlabels[zvec[c]][yvec[c]][xvec[c]] = adjlabel;
 						}
 						lab--;
@@ -1533,33 +1431,24 @@ void LKM::RelabelStraySupervoxels(
 				i++;
 			}
 		}
-	}}
+	}
 	//------------------
 	// mem de-allocation
 	//------------------
-        /*
-	{for( int d = 0; d < depth; d++ )
-	{
-		for( int i = 0; i < sz; i++ ) labels[d][i] = nlabels[d][i];
-	}}
-	{for( int d = 0; d < depth; d++ )
-	{
-		delete [] nlabels[d];
-	}}
-	delete [] nlabels;
-        */
-
+	// printf("Before mem de-allocation in RelabelStraySupervoxels\n");
 	for( int d = 0; d < depth; d++ )
 	{
-		delete [] labels[d];
+		for(int e=0;e<height;e++)
+			{if(nlabels[d][e]) delete [] nlabels[d][e];}
+		if(nlabels[d]) delete [] nlabels[d];
 	}
-	delete [] labels;
-        labels = nlabels;
-
+	if(nlabels) delete [] nlabels;
+	// printf("Middle\n");
 	//------------------
-	if(xvec) delete [] xvec;
+	if(xvec) delete [] xvec; 
 	if(yvec) delete [] yvec;
 	if(zvec) delete [] zvec;
+	// printf("After mem de-allocation in RelabelStraySupervoxels\n");
 	//------------------
 	numlabels = lab;
 	//------------------

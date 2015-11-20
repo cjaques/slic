@@ -89,7 +89,7 @@ void DrawContoursAroundSegments(
 /// statement inside the loop that looks at neighbourhood.
 //=================================================================================
 void DrawContoursAroundVoxels(
-                                double***     img,    //contours will be drawn on this image
+                                double***&     img,    //contours will be drawn on this image
                                 sidType***    labels,
                                 const int&    width,
                                 const int&    height,

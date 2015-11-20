@@ -8,7 +8,7 @@
 #include "LKM.h"
 #include "utils.h"
 
-#define DEBUG 
+// #define DEBUG 
 
 #ifdef DEBUG
 #include "opencv2/core/core.hpp"
@@ -181,13 +181,32 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   int imgLength = dimX*dimY; 
   int imgDepth = dimZ;
   int numlabels;
+   /* -------------------------
+       Memory allocation 
+  ---------------------------*/
   double *** ubuff = new double**[imgDepth];
-  sidType *** labels;
+  sidType *** labels = new sidType**[imgDepth];
+  for(int i=0;i<dimZ;i++)
+  {
+    ubuff[i]= new double*[dimY];
+    labels[i] = new sidType*[dimY];
+    for(int j=0;j<dimY;j++)
+    {
+      ubuff[i][j] = new double[dimX];
+      labels[i][j] = new sidType[dimX];
+      for( int s = 0; s < dimX; s++ )
+      {
+        labels[i][j][s] = UNDEFINED_LABEL;
+      }
+    }
+  }
+
+
   LKM lkm;
 
   UINT color = 255;
   lkm.DoSupervoxelSegmentationForGrayVolume(inputVolume, dimX, dimY, dimZ, labels, numlabels, STEP, M);
-  // DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
+  DrawContoursAroundVoxels(ubuff,labels,dimX,dimY,dimZ,color);
   
   #ifdef DEBUG
   printf("[slicmodule.cpp] Output array ready, casting PyArray to PyObject\n");
@@ -199,11 +218,12 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   PyArrayObject * boundaries = (PyArrayObject*)PyArray_FROM_OTF(bnd,NPY_DOUBLE, NPY_ARRAY_OUT_ARRAY);
 
   Extract_array3D<sidType>(returnval,dims,labels); // Gets labels into returnval
-  // Extract_array3D<double>(boundaries,dims,ubuff); // Gets boundaries
+  Extract_array3D<double>(boundaries,dims,ubuff); // Gets boundaries
   
-  // PyObject* callbackResult;
-  // if(PyCallback_setBoundaries!=NULL)
-  //    callbackResult = PyObject_CallObject(PyCallback_setBoundaries, (PyObject*)Py_BuildValue("(O)", boundaries ));
+  // Callback to a Python function to pass boundaries, for display
+  PyObject* callbackResult;
+  if(PyCallback_setBoundaries!=NULL)
+     callbackResult = PyObject_CallObject(PyCallback_setBoundaries, (PyObject*)Py_BuildValue("(O)", boundaries ));
 
   #ifdef DEBUG
   printf("[slicmodule.cpp] Returning outputs\n");
@@ -212,13 +232,18 @@ static PyObject * slic_Compute3DSlic(PyObject *self, PyObject *args)
   /* -------------------------
        CLEAN UP 
   ---------------------------*/
-  // for(int k=0;k<dimZ;k++)
-  // {
-  //   delete [] ubuff[k] ;  
-  //   delete [] labels[k] ;
-  // }
-  // delete[] ubuff;  
-  // delete [] labels; 
+  for(int k=0;k<dimZ;k++)
+  {
+    for(int j=0;j<dimY;j++)
+    {
+      delete [] ubuff[k][j];
+      delete [] labels[k][j];
+    }
+    delete [] ubuff[k] ;  
+    delete [] labels[k] ;
+  }
+  delete[] ubuff;  
+  delete [] labels; 
   
   /* -------------------------
        RETURN VAL
@@ -252,7 +277,6 @@ template<typename T> void Extract_array3D(PyArrayObject * returnval,npy_intp *di
         index[0] = i; 
 
         labelValue = (PyObject*)Py_BuildValue("d",(double)(labels[i][j][k]) );
-        // idx++;
 
         if(PyArray_SETITEM((PyArrayObject*)returnval, (char*)PyArray_GetPtr(returnval,index),labelValue ) < 0) 
           {  
